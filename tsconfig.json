@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2018",
-    "lib": ["es5","ES6","dom", "dom.iterable"],
+    "lib": ["esnext"],
     "module": "NodeNext",
     "rootDir": "./src",
     "outDir": "./dist",
@@ -18,9 +18,9 @@
   "include": ["src/**/*", "express.d.ts"],
   "exclude": ["node_modules", "./src/__tests__", "./src/types"], 
   "lib": ["esnext"],
-  "ts-node": {
-    "esm": true
-  }
+  // "ts-node": {
+  //   "esm": true
+  // }
 }
 
 
