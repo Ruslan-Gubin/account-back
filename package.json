@@ -2,7 +2,7 @@
   "name": "accounts",
   "version": "1.0.0",
   "description": "a really cool app",
-  "main": "/dist/index.js",
+  "main": "index.js",
   "type": "module",
   "husky": {
     "hooks": {
