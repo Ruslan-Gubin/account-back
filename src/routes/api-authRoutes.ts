@@ -10,7 +10,7 @@ const authService = new AuthService({ cache: nodeCache })
 const authController = new AuthController(authService)
 
 router.post("/api/register", registerValedation, handleValidationErrors, authController.createUser); 
-router.post("/api/login",  handleValidationErrors, authController.authorizeUser);
+router.post("/api/login", loginValedation, handleValidationErrors, authController.authorizeUser);
 router.get("/api/auth/:id", checkAuth, authController.getUserInfo);
 router.delete('/api/auth-remove/:id', checkAuth, authController.removeUser);
 router.patch('/api/auth-update', checkAuth, handleValidationErrors, authController.updateUser);

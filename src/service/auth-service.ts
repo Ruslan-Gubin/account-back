@@ -1,6 +1,6 @@
 import { Model, UpdateWriteOpResult } from 'mongoose';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt'; 
+import bcrypt from 'bcrypt';
 import { cloudinary } from '../config/cloudinary.js';
 import * as types from '../types/index.js';
 import { UserModel } from '../models/index.js';
@@ -20,12 +20,12 @@ export class AuthService {
     return jwt.sign({ _id: id }, process.env.SECRET_TOKEN as string, {
       expiresIn: '30d',
     });
-  } 
+  }
 
   async create(body: DTO.CreatedUserDTO): Promise<types.IUser | types.IReturnErrorObj> {
     try {
       if (!body) {
-        throw new Error('Не получены данные нового пользователя');
+        throw new Error('The new users data has not been received');
       }
       const { avatar } = body;
 
@@ -33,16 +33,15 @@ export class AuthService {
       const salt = await bcrypt.genSalt(10);
       const passwordBcrypt = await bcrypt.hash(pas, salt);
 
-
       const newUser = await new this.model({
         ...body,
         passwordHash: passwordBcrypt,
       }).save();
-      
+
       if (!newUser) {
-        throw new Error('Failed to create new user')
+        throw new Error('Failed to create new user');
       }
-      
+
       const resImage = await cloudinary.uploader.upload(avatar, {
         folder: 'XPartners',
       });
@@ -50,11 +49,14 @@ export class AuthService {
         throw new Error('Failed create user img');
       }
 
-      const updateImageUser = await this.model.findByIdAndUpdate(newUser._id, {
-      avatar: { public_id: resImage.public_id, url: resImage.secure_url },
-      }, { returnDocument: 'after' })
-      if (!updateImageUser) throw new Error('Failed to update image in create new user')
-
+      const updateImageUser = await this.model.findByIdAndUpdate(
+        newUser._id,
+        {
+          avatar: { public_id: resImage.public_id, url: resImage.secure_url },
+        },
+        { returnDocument: 'after' },
+      );
+      if (!updateImageUser) throw new Error('Failed to update image in create new user');
 
       const token = this.getToken(updateImageUser._id);
 
@@ -80,7 +82,7 @@ export class AuthService {
       if (!user) {
         throw new Error('Failed to email or password');
       }
-      
+
       const isValidPass = user._doc.passwordHash && bcrypt.compare(password, user._doc.passwordHash);
 
       if (!isValidPass) {
@@ -107,7 +109,7 @@ export class AuthService {
       let getUserCache = this.cache.getValueInKey(userId);
 
       if (!getUserCache) {
-        const user = await this.model.findById(userId); 
+        const user = await this.model.findById(userId);
 
         if (!user) {
           throw new Error('user undefined in db');
@@ -129,17 +131,16 @@ export class AuthService {
 
   async getAll(id: string): Promise<types.IUser[] | types.IReturnErrorObj> {
     try {
-      
       if (!id) {
         throw new Error('Failed to get user ID not found');
       }
 
-        const allUsers = await this.model.find({_id: { $ne: id }}, {date_of_birth: 1, name: 1, avatar: 1}); 
+      const allUsers = await this.model.find({ _id: { $ne: id } }, { date_of_birth: 1, name: 1, avatar: 1 });
 
-        if (!allUsers) {
-          throw new Error('Failed to get all users');
-        }
-        
+      if (!allUsers) {
+        throw new Error('Failed to get all users');
+      }
+
       return allUsers;
     } catch (error) {
       logger.error('Failed to get user in service:', error);
@@ -170,21 +171,21 @@ export class AuthService {
 
   async updateUser(body: DTO.UpdateUserDTO): Promise<types.IUser | types.IReturnErrorObj> {
     try {
-      const { id, name, newImg, password, prevImg } = body
+      const { id, name, newImg, password, prevImg } = body;
 
       if (!id) {
         throw new Error('Failed to body data in update user service');
       }
 
-      const payload: Record<string, string | {public_id: string, url: string}> = {}
+      const payload: Record<string, string | { public_id: string; url: string }> = {};
 
       if (name) {
         payload.name = name;
-      };
+      }
 
       if (password) {
         payload.password = password;
-      };
+      }
 
       if (prevImg) {
         await cloudinary.uploader.destroy(prevImg);
@@ -207,7 +208,4 @@ export class AuthService {
       return { error, text: 'Failed to update user in service' };
     }
   }
-
-
-
 }

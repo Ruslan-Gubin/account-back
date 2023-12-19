@@ -15,6 +15,7 @@
     "test": "jest -c ./jest.unit.json",
     "lint": "npx eslint ./src",
     "format": "npx eslint ./src --fix",
+    "build-prod": "tsc",
     "start": "node ./dist"
   },
   "keywords": [],

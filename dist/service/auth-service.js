@@ -16,7 +16,7 @@ export class AuthService {
     async create(body) {
         try {
             if (!body) {
-                throw new Error('Не получены данные нового пользователя');
+                throw new Error('The new users data has not been received');
             }
             const { avatar } = body;
             const pas = body.password;
@@ -138,11 +138,9 @@ export class AuthService {
             if (name) {
                 payload.name = name;
             }
-            ;
             if (password) {
                 payload.password = password;
             }
-            ;
             if (prevImg) {
                 await cloudinary.uploader.destroy(prevImg);
                 const result = await cloudinary.uploader.upload(newImg, {
