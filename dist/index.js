@@ -23,7 +23,8 @@ app.use(fileUpload({}));
 })();
 app.use(routes.authRouter);
 app.use(routes.uploadRouter);
-app.listen(process.env['PORT'] || 4444, () => {
+app.use(routes.connectRouter);
+app.listen(process.env['PORT'] || 4445, () => {
     logger.connectSuccess(`Listening port ${process.env['PORT'] || 4444}`);
 });
 export { app };
