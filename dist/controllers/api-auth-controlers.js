@@ -3,13 +3,22 @@ export class AuthController {
     constructor(authService) {
         this.authService = authService;
         this.createUser = async (req, res) => {
+            var _a;
             try {
                 const body = req.body;
-                const user = await this.authService.create(body);
-                res.status(201).json({ data: user, result: 'success' });
+                const file = (_a = req === null || req === void 0 ? void 0 : req.files) === null || _a === void 0 ? void 0 : _a.avatar;
+                const fileImage = {
+                    originalname: file.name,
+                    buffer: {
+                        data: file.data,
+                        type: file.mimetype,
+                    }
+                };
+                const user = await this.authService.create({ body, fileImage });
+                res.status(201).send({ data: user, result: 'success' });
             }
             catch (error) {
-                logger.error('Failed to create user:', error);
+                logger.error('Failed to create user11:', error);
                 res.status(500).json({ error: 'Failed to create a user', errorMessage: error });
             }
         };
@@ -53,9 +62,21 @@ export class AuthController {
             }
         };
         this.updateUser = async (req, res) => {
+            var _a, _b;
             try {
                 const body = req.body;
-                const updateUser = await this.authService.updateUser(body);
+                let fileImage = null;
+                const files = (((_a = req === null || req === void 0 ? void 0 : req.files) === null || _a === void 0 ? void 0 : _a.newImg) ? (_b = req === null || req === void 0 ? void 0 : req.files) === null || _b === void 0 ? void 0 : _b.newImg : null);
+                if (files) {
+                    fileImage = {
+                        originalname: files.name,
+                        buffer: {
+                            data: files.data,
+                            type: files.mimetype,
+                        }
+                    };
+                }
+                const updateUser = await this.authService.updateUser({ body, fileImage });
                 res.status(200).json({ data: updateUser, result: 'success' });
             }
             catch (error) {

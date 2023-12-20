@@ -1,12 +1,12 @@
 import * as express from 'express';
 import { AuthController } from '../controllers/api-auth-controlers.js';
 import { AuthService } from '../service/auth-service.js';
-import { checkAuth, handleValidationErrors, nodeCache } from '../utils/index.js';
+import { checkAuth, handleValidationErrors } from '../utils/index.js';
 import { registerValedation, loginValedation } from "../validations/authValudation.js";
 
 const router: express.Router =  express.Router();
 
-const authService = new AuthService({ cache: nodeCache })
+const authService = new AuthService()
 const authController = new AuthController(authService)
 
 router.post("/api/register", registerValedation, handleValidationErrors, authController.createUser); 

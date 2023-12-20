@@ -25,14 +25,8 @@ const UserShema = new mongoose.Schema<IUser>(
       require: true,
     },
     avatar: {
-      public_id: {
-        type: String,
-        require: true, 
-      },
-      url: {
-        type: String,
-        require: true, 
-      },
+      type: String,
+      require: true,
     }, 
   },
   { timestamps: true }

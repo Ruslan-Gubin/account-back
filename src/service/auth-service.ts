@@ -1,19 +1,18 @@
-import { Model, UpdateWriteOpResult } from 'mongoose';
+import { Model } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { cloudinary } from '../config/cloudinary.js';
 import * as types from '../types/index.js';
 import { UserModel } from '../models/index.js';
 import * as DTO from '../dtos/index.js';
-import { CacheManager, logger } from '../utils/index.js';
+import {  logger } from '../utils/index.js';
+import { uploadController } from '../controllers/api-upload-controllers.js';
+import { FileImage } from '../dtos/uploads-dto.js';
 
 export class AuthService {
   private readonly model: Model<types.IUser>;
-  private cache: CacheManager<types.IUser>;
 
-  constructor({ cache }: { cache: CacheManager<types.IUser> }) {
+  constructor() {
     this.model = UserModel;
-    this.cache = cache;
   }
 
   private getToken(id: string) {
@@ -22,13 +21,11 @@ export class AuthService {
     });
   }
 
-  async create(body: DTO.CreatedUserDTO): Promise<types.IUser | types.IReturnErrorObj> {
+  async create({ body, fileImage }: {body: DTO.CreatedUserDTO, fileImage: FileImage}): Promise<types.IUser | types.IReturnErrorObj> {
     try {
       if (!body) {
         throw new Error('The new users data has not been received');
-      }
-      const { avatar } = body;
-
+      }   
       const pas = body.password;
       const salt = await bcrypt.genSalt(10);
       const passwordBcrypt = await bcrypt.hash(pas, salt);
@@ -42,18 +39,16 @@ export class AuthService {
         throw new Error('Failed to create new user');
       }
 
-      const resImage = await cloudinary.uploader.upload(avatar, {
-        folder: 'XPartners',
-      });
-      if (!resImage) {
+      const uploadImg = await uploadController.createImage({ dir: 'avatar',  file: fileImage, h: 150, w: 150 })
+      const imgUrl = uploadImg.data?.url
+
+      if (!imgUrl || uploadImg.result !== 'success') {
         throw new Error('Failed create user img');
       }
 
       const updateImageUser = await this.model.findByIdAndUpdate(
         newUser._id,
-        {
-          avatar: { public_id: resImage.public_id, url: resImage.secure_url },
-        },
+        { avatar: imgUrl },
         { returnDocument: 'after' },
       );
       if (!updateImageUser) throw new Error('Failed to update image in create new user');
@@ -61,8 +56,6 @@ export class AuthService {
       const token = this.getToken(updateImageUser._id);
 
       const { passwordHash, ...userData } = updateImageUser._doc;
-
-      this.cache.addKeyInCache(userData._id.toString(), userData as types.IUser);
 
       return { ...userData, token } as types.IUser;
     } catch (error) {
@@ -106,23 +99,15 @@ export class AuthService {
         throw new Error('Failed to get user ID not found');
       }
 
-      let getUserCache = this.cache.getValueInKey(userId);
-
-      if (!getUserCache) {
         const user = await this.model.findById(userId);
 
         if (!user) {
           throw new Error('user undefined in db');
         }
 
-        const { passwordHash, ...userData } = user._doc;
+      const { passwordHash, ...userData } = user._doc;
 
-        getUserCache = userData as types.IUser;
-
-        this.cache.addKeyInCache(userId, userData as types.IUser);
-      }
-
-      return getUserCache as types.IUser;
+      return userData as types.IUser;
     } catch (error) {
       logger.error('Failed to get user in service:', error);
       return { error, text: 'Failed to get user in service' };
@@ -140,7 +125,7 @@ export class AuthService {
       if (!allUsers) {
         throw new Error('Failed to get all users');
       }
-
+ 
       return allUsers;
     } catch (error) {
       logger.error('Failed to get user in service:', error);
@@ -157,27 +142,22 @@ export class AuthService {
         throw new Error('Failed to get user id db');
       }
 
-      this.cache.removeKeyFromCache(idAuth);
-
-      const imageId = auth.avatar.public_id;
-      await cloudinary.uploader.destroy(imageId);
-
-      return { success: true, message: `${auth.name} user deleted` };
+      return { success: true, message: `user deleted` };
     } catch (error) {
       logger.error('Failed to remove user in service:', error);
       return { error, text: 'Failed to remove user in service' };
     }
   }
 
-  async updateUser(body: DTO.UpdateUserDTO): Promise<types.IUser | types.IReturnErrorObj> {
+  async updateUser({ body, fileImage }:{ body: DTO.UpdateUserDTO, fileImage: FileImage | null }): Promise<types.IUser | types.IReturnErrorObj> {
     try {
-      const { id, name, newImg, password, prevImg } = body;
+      const { id, name,  password, prevImg } = body;
 
       if (!id) {
         throw new Error('Failed to body data in update user service');
       }
 
-      const payload: Record<string, string | { public_id: string; url: string }> = {};
+      const payload: Record<string, string> = {};
 
       if (name) {
         payload.name = name;
@@ -187,15 +167,11 @@ export class AuthService {
         payload.password = password;
       }
 
-      if (prevImg) {
-        await cloudinary.uploader.destroy(prevImg);
+      if (fileImage && prevImg) {
+        const uploadImg = await uploadController.changeImage({ path: prevImg, dir: 'avatar',  file: fileImage, h: '150', w: '150' })
+        const newImgUrl = uploadImg.data?.url
 
-        const result = await cloudinary.uploader.upload(newImg, {
-          folder: 'XPartners',
-          fetch_format: 'auto',
-        });
-
-        payload.avatar = { public_id: result.public_id, url: result.secure_url };
+        payload.avatar = newImgUrl;
       }
 
       const updateUser = await this.model.findByIdAndUpdate(id, { ...payload }, { returnDocument: 'after' });

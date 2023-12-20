@@ -22,14 +22,8 @@ const UserShema = new mongoose.Schema({
         require: true,
     },
     avatar: {
-        public_id: {
-            type: String,
-            require: true,
-        },
-        url: {
-            type: String,
-            require: true,
-        },
+        type: String,
+        require: true,
     },
 }, { timestamps: true });
 export const UserModel = mongoose.model("User", UserShema);

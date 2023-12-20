@@ -2,7 +2,6 @@ export interface CreatedUserDTO {
   name: string;
   email: string;
   password: string;
-  avatar: string;
   date_of_birth: string;
   gender: string;
 }
@@ -16,10 +15,9 @@ export interface RemoveUserDTO {
   removeId: string;
 }
 export interface UpdateUserDTO {
-  name: string;
-  prevImg: string;
-  newImg: string;
-  password: string;
+  name?: string;
+  prevImg?: string;
+  password?: string;
   id: string;
 }
 export interface UserIdParamsDTO {
